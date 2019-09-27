@@ -7,7 +7,6 @@ const mostLikes = (blogs) => {
   const grouped = _.groupBy(blogs, (x) => x.author);
   const mapped = _.mapValues(grouped, (x) => x.reduce((acc, cur) => acc + cur.likes, 0));
   const highest = _.maxBy(Object.keys(mapped), (x) => mapped[x]);
-  console.log(JSON.stringify({ author: highest, likes: mapped[highest] }));
   return { author: highest, likes: mapped[highest] };
 };
 

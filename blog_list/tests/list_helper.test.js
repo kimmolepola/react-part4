@@ -15,7 +15,7 @@ describe('most likes', () => {
       },
     );
   });
-  test.only('of a bigger list is calculated right', () => {
+  test('of a bigger list is calculated right', () => {
     const result = listHelper.mostLikes(testInput.blogs);
     expect(result).toEqual(
       {
