@@ -1,9 +1,10 @@
 post http://localhost:3003/api/blogs
 Content-Type: application/json
+Authorization: bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VybmFtZSI6ImFzaWFudHVudGlqYSIsImlkIjoiNWQ5Mjc1ZTEyNjkyOWQyZmM0NWM1ZjA5IiwiaWF0IjoxNTY5ODgwMjMxfQ.NQ7vavau5vAwoyStTHQsmEpxppKEVeADFmv5wMq4nQI
 
 {
- "title": "jjewewewjjjjjyyyyy",
-  "author": "jjjjjjjjjjjj",
-  "url": "vvvvvvvvvvv",
-  "likes": "1030"
+ "title": "Lisaa Tekstia",
+  "author": "Joku Muu",
+  "url": "http://www.teksti.com/blogi/",
+  "likes": "444444"
 }
