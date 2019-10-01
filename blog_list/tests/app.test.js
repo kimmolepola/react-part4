@@ -114,28 +114,38 @@ describe('user', () => {
 });
 
 describe('blog', () => {
+  let token;
   beforeEach(async () => {
     await Blog.deleteMany({});
+    await User.deleteMany({});
+    const user = await api.post('/api/users').send({ username: 'username', password: 'password' });
     const blogObjects = helper.initialBlogs
-      .map((blog) => new Blog(blog));
+      .map((blog) => {
+        const newBlog = new Blog(blog);
+        newBlog.user = user.body.id;
+        return newBlog;
+      });
     const promiseArray = blogObjects.map((blog) => blog.save());
-    await Promise.all(promiseArray);
+    const savedBlogs = await Promise.all(promiseArray);
+    user.body.blogs = savedBlogs.map((x) => x.id);
+    await User.findByIdAndUpdate(user.body.id, user.body);
+    const loginResponse = await api.post('/api/login').send({ username: 'username', password: 'password' });
+    token = 'bearer '.concat(loginResponse.body.token);
   });
 
   describe('update and delete operations', () => {
     test('blog update works', async () => {
-      const blogs = await api.get('/api/blogs');
-      const blog = blogs.body[0];
-      blog.likes += 1;
-      const response = await api.put(`/api/blogs/${blog.id}`).send(blog);
-      expect(response.statusCode).toBe(200);
-      expect(response.body.likes).toBe(blog.likes);
+      const blogs = await Blog.find({});
+      blogs[0].likes += 1;
+      const putResponse = await api.put(`/api/blogs/${blogs[0].id}`).set('Authorization', token).send(blogs[0]);
+      expect(putResponse.statusCode).toBe(200);
+      expect(putResponse.body.likes).toBe(blogs[0].likes);
     });
 
     test('blog deletion works', async () => {
       const blogsBefore = await api.get('/api/blogs');
       const blogId = blogsBefore.body[0].id;
-      const response = await api.delete(`/api/blogs/${blogId}`);
+      const response = await api.delete(`/api/blogs/${blogId}`).set('Authorization', token);
       const blogsAfter = await api.get('/api/blogs');
       expect(blogsBefore.body.length).toBe(blogsAfter.body.length + 1);
       expect(response.statusCode).toBe(204);
@@ -146,45 +156,44 @@ describe('blog', () => {
     test('if title or url properties are missing from the request data, the backend responds to the request with the status code 400 Bad Request', async () => {
       let blog = { ...helper.initialBlogs[0] };
       delete blog.title;
-      let response = await api.post('/api/blogs').send(blog);
-      expect(response.statusCode === 400 && response.statusMessage === 'Bad Request');
+      let response = await api.post('/api/blogs').send(blog).set('Authorization', token);
+      expect(response.statusCode).toBe(400);
+      expect(response.res.statusMessage).toBe('Bad Request');
+
       blog = { ...helper.initialBlogs[0] };
       delete blog.url;
-      response = await api.post('/api/blogs').send(blog);
-      expect(response.statusCode === 400 && response.statusMessage === 'Bad Request');
+      response = await api.post('/api/blogs').send(blog).set('Authorization', token);
+      expect(response.statusCode).toBe(400);
+      expect(response.res.statusMessage).toBe('Bad Request');
+
       blog = { ...helper.initialBlogs[0] };
       delete blog.title;
       delete blog.url;
-      response = await api.post('/api/blogs').send(blog);
-      expect(response.statusCode === 400 && response.statusMessage === 'Bad Request');
+      response = await api.post('/api/blogs').send(blog).set('Authorization', token);
+      expect(response.statusCode).toBe(400);
+      expect(response.res.statusMessage).toBe('Bad Request');
     });
 
-    test('if the likes property is missing from the request, it will default to the value 0', async () => {
-      const blog = helper.initialBlogs[0];
-      expect(blog.likes !== 0);
+    test('if the likes property is missing from the request, it will default to value 0', async () => {
+      const blog = { ...helper.initialBlogs[0] };
       delete blog.likes;
-      const response = await api.post('/api/blogs').send(blog);
-      expect(response.body.likes === 0);
+      expect(blog.likes).toBe(undefined);
+      const response = await api.post('/api/blogs').send(blog).set('Authorization', token);
+      expect(response.body.likes).toBe(0);
     });
 
     test('content of blog post is saved correctly to the database', async () => {
       const blogsBefore = await api.get('/api/blogs');
-      console.log('1-----------------', blogsBefore.length);
-      const response = await api.post('/api/blogs').send(helper.initialBlogs[0]);
-      console.log('2---------------', response.length);
-      // expect(response.statusCode === 201);
+      const response = await api.post('/api/blogs').set('Authorization', token).send(helper.initialBlogs[0]);
       expect(response.statusCode).toBe(201);
-      console.log('3---------------', response.statusCode);
-      expect(response.headers['content-type'].includes('application/json'));
-      console.log('4---------------', response.headers['content-type'].includes('application/json'));
+      expect(response.headers['content-type']).toContain('application/json');
       delete response.body.id;
-      console.log('5---------------', response.body);
-      expect(_.isEqual(response.body, helper.initialBlogs[0]));
-      console.log('6---------------', _.isEqual(response.body, helper.initialBlogs[0]));
+      expect(response.body.title).toBe(helper.initialBlogs[0].title);
+      expect(response.body.author).toBe(helper.initialBlogs[0].author);
+      expect(response.body.url).toBe(helper.initialBlogs[0].url);
+      expect(response.body.likes).toBe(helper.initialBlogs[0].likes);
       const blogsAfter = await api.get('/api/blogs');
-      console.log('7---------------', blogsAfter.body.length);
-      expect(blogsAfter.body.length === blogsBefore.body.length + 1);
-      console.log('8---------------', blogsAfter.body.length === blogsBefore.body.length + 1);
+      expect(blogsAfter.body.length).toBe(blogsBefore.body.length + 1);
     });
   });
 

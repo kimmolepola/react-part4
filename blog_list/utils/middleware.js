@@ -32,8 +32,6 @@ const errorHandler = (error, request, response, next) => {
   } if (error.name === 'JsonWebTokenError') {
     return response.status(401).json({ error: 'invalid token' });
   } if (error.name === 'Forbidden') {
-    console.log('juuuh');
-    console.log('messaaagi', error.message);
     return response.status(403).json({ error: error.message });
   }
   next(error);

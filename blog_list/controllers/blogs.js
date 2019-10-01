@@ -55,12 +55,11 @@ blogsRouter.post('/', async (request, response, next) => {
       user: user._id, // eslint-disable-line no-underscore-dangle
     });
 
-
     const savedBlog = await blog.save();
     // eslint-disable-next-line no-underscore-dangle
     user.blogs = user.blogs.concat(savedBlog._id);
     await user.save();
-    response.json(savedBlog.toJSON());
+    response.status(201).json(savedBlog.toJSON());
   } catch (exception) {
     next(exception);
   }

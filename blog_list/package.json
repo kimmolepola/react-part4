@@ -1,6 +1,6 @@
 {
-  "name": "blog_list",
-  "version": "0.0.1",
+  "name": "blog_list_expansion",
+  "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
